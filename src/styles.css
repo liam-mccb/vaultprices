@@ -1,0 +1,101 @@
+body {
+  margin: 0;
+  padding-top: 40px;
+  font-family: 'Space Grotesk', sans-serif;
+  background-color: #d3ffda;
+  color: #1e293b;
+}
+
+
+
+nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  padding: 10px;
+  background-color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+}
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  padding-right: 0px;
+}
+
+nav a {
+  margin-left: 12px;
+  padding: 6px 12px;
+  text-decoration: none;
+  color: #1e293b;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.nav-brand {
+  color: #10b981;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 2rem;
+  font-weight: 600;
+  font-weight: bold;
+}
+
+.nav-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  width: 100%;
+  max-width: 1440px;           /* content is constrained here */
+  margin: 0 auto;              /* centers the inner content */
+  padding: 0 24px;             /* ensures spacing on all screen sizes */
+}
+
+
+.nav-link {
+  margin-left: 12px;
+  padding: 6px 12px;
+  text-decoration: none;
+  color: #1e293b;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.nav-link:hover {
+  background-color: #d1fae5;
+  border-color: #a7f3d0;
+}
+
+.nav-link.active {
+  font-weight: 600;
+  background-color: #d1fae5;
+  border-color: #a7f3d0;
+}
+
+
+nav a:hover {
+  background-color: #d1fae5;
+  border-color: #a7f3d0;
+  color: #1e293b; /* keep it black on hover */
+}
+
+
+
+
+
+h1 {
+  font-size: 2rem;
+}
+
+.container {
+  padding: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
