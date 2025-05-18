@@ -1,5 +1,9 @@
 {
+<<<<<<< HEAD
   "name": "trak",
+=======
+  "name": "trak-money",
+>>>>>>> baa7e0bcb0c839f7d7d256e42084e6e4b69926f6
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -12,21 +16,31 @@
   "dependencies": {
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+<<<<<<< HEAD
     "react-router-dom": "^7.6.0",
     "recharts": "^2.15.3"
+=======
+    "react-router-dom": "^7.6.0"
+>>>>>>> baa7e0bcb0c839f7d7d256e42084e6e4b69926f6
   },
   "devDependencies": {
     "@eslint/js": "^9.25.0",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
     "@vitejs/plugin-react": "^4.4.1",
+<<<<<<< HEAD
     "autoprefixer": "^10.4.21",
+=======
+>>>>>>> baa7e0bcb0c839f7d7d256e42084e6e4b69926f6
     "eslint": "^9.25.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^16.0.0",
+<<<<<<< HEAD
     "postcss": "^8.5.3",
     "tailwindcss": "^4.1.7",
+=======
+>>>>>>> baa7e0bcb0c839f7d7d256e42084e6e4b69926f6
     "vite": "^6.3.5"
   }
 }
