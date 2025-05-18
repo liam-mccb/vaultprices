@@ -1,66 +1,81 @@
+/* Global Reset */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* General Page Styling */
 body {
   margin: 0;
-  padding-top: 40px;
+  padding-top: 60px; /* Ensures content clears the fixed navbar */
   font-family: 'Space Grotesk', sans-serif;
   background-color: #d3ffda;
   color: #1e293b;
 }
 
+h1 {
+  font-size: 2rem;
+}
 
+.container {
+  padding: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
 
-nav {
+/* Root Container */
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 2rem; /* horizontal padding only */
+  text-align: center;
+}
+
+/* Navbar Container */
+.navbar {
+  background-color: #ffffff;
+  padding: 10px;
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
-  padding: 10px;
-  background-color: white;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
   z-index: 1000;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  overflow-x: hidden; /* Prevents right-side clipping */
 }
 
-.nav-right {
-  display: flex;
-  align-items: center;
-  padding-right: 0px;
-}
-
-nav a {
-  margin-left: 12px;
-  padding: 6px 12px;
-  text-decoration: none;
-  color: #1e293b;
-  border: 1px solid transparent;
-  border-radius: 6px;
-  transition: background-color 0.2s, border-color 0.2s;
-}
-
-.nav-brand {
-  color: #10b981;
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 2rem;
-  font-weight: 600;
-  font-weight: bold;
-}
-
+/* Inner Navbar Layout */
 .nav-inner {
   display: flex;
   justify-content: space-between;
   align-items: center;
-
   width: 100%;
-  max-width: 1440px;           /* content is constrained here */
-  margin: 0 auto;              /* centers the inner content */
-  padding: 0 24px;             /* ensures spacing on all screen sizes */
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 24px;
+  overflow: hidden; /* Optional: clip overly wide children */
 }
 
+/* Brand Name */
+.nav-brand {
+  color: #10b981;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 2rem;
+  font-weight: bold;
+}
 
+/* Right-Aligned Nav Links (Desktop) */
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0; /* 💥 Allows shrink-to-fit */
+}
+
+/* All Links */
 .nav-link {
-  margin-left: 12px;
-  padding: 6px 12px;
+  padding: 6px 10px; /* slightly reduced to save space */
   text-decoration: none;
   color: #1e293b;
   border: 1px solid transparent;
@@ -75,27 +90,43 @@ nav a {
 
 .nav-link.active {
   font-weight: 600;
-  background-color: #d1fae5;
-  border-color: #a7f3d0;
+  background-color: #10b981;
+  color: white;
+  border-radius: 6px;
 }
 
-
-nav a:hover {
-  background-color: #d1fae5;
-  border-color: #a7f3d0;
-  color: #1e293b; /* keep it black on hover */
+/* Hamburger Icon (Mobile Only) */
+.hamburger {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 1.75rem;
+  cursor: pointer;
 }
 
-
-
-
-
-h1 {
-  font-size: 2rem;
-}
-
-.container {
-  padding: 2rem;
-  max-width: 800px;
+/* Mobile Links (Shown When ☰ Is Toggled) */
+.mobile-links {
+  display: flex;
+  flex-direction: column;
+  padding-top: 0.5rem;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+  max-width: 1440px;
   margin: 0 auto;
+}
+
+.mobile-links .nav-link {
+  padding: 0.5rem 0;
+  border-top: 1px solid #ccc;
+}
+
+/* Responsive Behavior */
+@media (max-width: 640px) {
+  .nav-right {
+    display: none;
+  }
+
+  .hamburger {
+    display: block;
+  }
 }
