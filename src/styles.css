@@ -8,7 +8,7 @@
 /* General Page Styling */
 body {
   margin: 0;
-  padding-top: 60px; /* Ensures content clears the fixed navbar */
+  padding-top: 100px; /* Ensures content clears the fixed navbar */
   font-family: 'Space Grotesk', sans-serif;
   background-color: #d3ffda;
   color: #1e293b;
