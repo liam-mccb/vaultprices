@@ -20,7 +20,7 @@ function Navbar() {
   return (
     <nav className="navbar">
       <div className="nav-inner">
-        <div className="nav-brand">Trak</div>
+        <div className="nav-brand">Vault Prices</div>
 
         {/* ☰ Icon (shown only on mobile) */}
         <button className="hamburger" onClick={toggleMenu}>

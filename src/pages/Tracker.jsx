@@ -87,7 +87,7 @@ export default function Tracker() {
 
   return (
     <div className="p-4 max-w-2xl mx-auto space-y-6">
-      <h2 className="text-xl font-bold">🧪 Trak Test Environment</h2>
+      <h2 className="text-xl font-bold">🧪 Vault Prices Test Environment</h2>
 
       {/* Search Bar */}
       <input
