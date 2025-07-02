@@ -7,11 +7,28 @@
   color: rgba(255, 255, 255, 0.87);
   background-color: #242424;
 
+  --vp-gold-600: #D4AF37;   /* brand / accents */
+  --vp-gold-700: #B68F1E;   /* hover shade */
+  --vp-text-dark: #1E1E1E;  /* body text in light mode */
+  --vp-bg-light: #FFFFFF;
+  --vp-bg-dark : #0A0A0A;
+
+  color-scheme: light dark;       /* allow prefers-color-scheme */
+  color: var(--vp-text-dark);
+  background-color: var(--vp-bg-light);
+
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+body.dark {
+  color: var(--vp-gold-600);
+  background-color: var(--vp-bg-dark);
+}
+
+
 
 a {
   font-weight: 500;

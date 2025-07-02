@@ -10,7 +10,7 @@ body {
   margin: 0;
   padding-top: 100px; /* Ensures content clears the fixed navbar */
   font-family: 'Space Grotesk', sans-serif;
-  background-color: #d3ffda;
+  background-color: var(--vp-bg-light);
   color: #1e293b;
 }
 
@@ -59,7 +59,7 @@ h1 {
 
 /* Brand Name */
 .nav-brand {
-  color: #10b981;
+  color: var(--vp-gold-600);
   font-family: 'Space Grotesk', sans-serif;
   font-size: 2rem;
   font-weight: bold;
@@ -77,21 +77,21 @@ h1 {
 .nav-link {
   padding: 6px 10px; /* slightly reduced to save space */
   text-decoration: none;
-  color: #1e293b;
+  color: var(--vp-text-dark);
   border: 1px solid transparent;
   border-radius: 6px;
   transition: background-color 0.2s, border-color 0.2s;
 }
 
 .nav-link:hover {
-  background-color: #d1fae5;
-  border-color: #a7f3d0;
+  background-color: rgba(0,0,0,0.05);
+  border-color: var(--vp-gold-700);
 }
 
 .nav-link.active {
   font-weight: 600;
-  background-color: #10b981;
-  color: white;
+  background-color: var(--vp-gold-600);
+  color: var(--vp-bg-light);
   border-radius: 6px;
 }
 
