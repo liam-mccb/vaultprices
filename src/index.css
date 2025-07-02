@@ -1,85 +1,71 @@
+/*  ─────────────────────────────
+    GLOBAL TOKENS & THEMES
+    ───────────────────────────── */
 :root {
+  /* brand (always the same) */
+  --vp-gold-600: #D4AF37;
+  --vp-gold-700: #B68F1E;
+
+  /* LIGHT mode defaults */
+  --vp-bg:   #FFFFFF;
+  --vp-text: #1E1E1E;
+}
+
+/* DARK mode overrides – enabled by JS:
+   document.documentElement.classList.add('dark')  */
+:root.dark {
+  --vp-bg:   #0A0A0A;
+  --vp-text: #F9F9F9;
+}
+
+/*  ─────────────────────────────
+    BASE ELEMENT STYLES
+    ───────────────────────────── */
+html, body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  --vp-gold-600: #D4AF37;   /* brand / accents */
-  --vp-gold-700: #B68F1E;   /* hover shade */
-  --vp-text-dark: #1E1E1E;  /* body text in light mode */
-  --vp-bg-light: #FFFFFF;
-  --vp-bg-dark : #0A0A0A;
-
-  color-scheme: light dark;       /* allow prefers-color-scheme */
-  color: var(--vp-text-dark);
-  background-color: var(--vp-bg-light);
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
+  background: var(--vp-bg);
+  color: var(--vp-text);
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
-body.dark {
-  color: var(--vp-gold-600);
-  background-color: var(--vp-bg-dark);
-}
-
-
-
+/* Links (brand variables stay gold) */
 a {
   font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
+  color: var(--vp-gold-600);
+  text-decoration: none;
 }
-a:hover {
-  color: #535bf2;
-}
+a:hover { color: var(--vp-gold-700); }
 
-body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
-}
+/* Headings / buttons left unchanged for brevity … */
+h1 { font-size: 3.2em; line-height: 1.1; }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
+/* Example button style that reacts to theme */
 button {
-  border-radius: 8px;
   border: 1px solid transparent;
+  border-radius: 8px;
   padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
+  font: inherit;
+  background: var(--vp-bg);
+  color: var(--vp-text);
   cursor: pointer;
   transition: border-color 0.25s;
 }
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
+button:hover { border-color: var(--vp-gold-700); }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
+/*  ─────────────────────────────
+    OPTIONAL: respect user’s OS preference
+    (only used if you don't set a manual toggle
+    in JS on first load)
+    ───────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  :root:not(.light):not(.dark) {  /* honour system only if no override */
+    --vp-bg:   #0A0A0A;
+    --vp-text: #F9F9F9;
   }
 }

@@ -4,12 +4,25 @@ import Home from './pages/Home';
 import About from './pages/About';
 import Contact from './pages/Contact';
 import Vault from './pages/Vault'; // make sure this is here too
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 
 
 function Navbar() {
   const [isMobileMenuOpen, setMobileMenuOpen] = useState(false); // ✅ Add toggle state
+  const [dark, setDark] = useState(() =>
+    // first load: use saved setting, else the OS preference
+    (localStorage.getItem('theme') ?? 'system') === 'dark' ||
+    (localStorage.getItem('theme') === null &&
+      window.matchMedia('(prefers-color-scheme: dark)').matches)
+  );
+  
+  // whenever `dark` changes → flip the .dark class & remember choice
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', dark);
+    localStorage.setItem('theme', dark ? 'dark' : 'light');
+  }, [dark]);
+
   const location = useLocation();
   const currentPath = location.pathname;
 
@@ -21,6 +34,14 @@ function Navbar() {
     <nav className="navbar">
       <div className="nav-inner">
         <div className="nav-brand">Vault Prices</div>
+
+        <button
+          className="theme-toggle"
+          onClick={() => setDark(!dark)}
+          aria-label="Toggle dark / light mode"
+        >
+          {dark ? '☀︎' : '☾'}
+        </button>
 
         {/* ☰ Icon (shown only on mobile) */}
         <button className="hamburger" onClick={toggleMenu}>

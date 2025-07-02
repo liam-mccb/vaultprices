@@ -120,6 +120,15 @@ h1 {
   border-top: 1px solid #ccc;
 }
 
+.theme-toggle {
+  background: none;
+  border: none;
+  font-size: 1.35rem;
+  cursor: pointer;
+  color: var(--vp-gold-600);
+  margin-right: 0.75rem;
+}
+
 /* Responsive Behavior */
 @media (max-width: 640px) {
   .nav-right {
