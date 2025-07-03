@@ -1,6 +1,6 @@
 /* Navbar Container */
 .navbar {
-  background-color: (var(--vp-surface));
+  background-color: var(--vp-surface);
   padding: 10px;
   position: fixed;
   top: 0;
@@ -8,7 +8,7 @@
   width: 100%;
   z-index: 1000;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-  overflow-x: hidden; /* Prevents right-side clipping */
+  overflow: visible;
 }
 
 /* Inner Navbar Layout */
@@ -60,6 +60,107 @@
   color: var(--vp-bg);
   border-radius: 6px;
 }
+
+/* ─── user hamburger (desktop only) ────────────────────────── */
+.user-hamburger {
+  background: none;
+  border: none;
+  font-size: 1.75rem;
+  cursor: pointer;
+  color: var(--vp-text);
+  margin-left: 0.5rem;
+  transition: transform .20s ease !important;
+  transform-origin: center!important;
+}
+
+.user-hamburger.open {
+  transform: rotate(90deg) !important;
+}
+
+@media (max-width: 640px) {
+  .user-hamburger { display: none; }
+}
+
+/* === account dropdown deluxe === */
+.user-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);     /* 4-px gap below bar  */
+  right: 0;                  /* hug right edge       */
+
+  width: 200px;
+  background: var(--vp-surface);
+  border: 1px solid #ddd;
+  border-radius: 12px;       /* softer card          */
+  filter: drop-shadow(0 6px 12px rgba(0,0,0,.12));
+  padding: .25rem 0;
+  z-index: 1001;
+
+  /* micro-animation */
+  animation: fadeSlide .08s ease-out;
+  transform-origin: top right;
+}
+
+/* little pointer notch */
+.user-dropdown::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  right: var(--arrow-offset, 16px);               /* aligns under ≡ button */
+  width: 10px;
+  height: 10px;
+  background: var(--vp-surface);
+  border-left: 1px solid #ddd;
+  border-top: 1px solid #ddd;
+  transform: rotate(45deg);
+}
+
+/* link layout: icon + text */
+.dropdown-link,
+.user-dropdown .nav-link {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  width: 100%;
+  padding: .6rem 1rem;
+  background: transparent;
+  border: none;
+  color: var(--vp-text);
+  font: inherit;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+/* thin separators */
+.dropdown-link + .dropdown-link,
+.user-dropdown .nav-link + .nav-link {
+  border-top: 1px solid rgba(0,0,0,.08);
+}
+
+/* also show a divider when a nav-link is followed by a dropdown-link */
+.user-dropdown .nav-link + .dropdown-link {
+  border-top: 1px solid rgba(0,0,0,.08);
+}
+
+.dropdown-link:hover,
+.user-dropdown .nav-link:hover {
+  background: rgba(0,0,0,.05);
+}
+
+/* icon sizing */
+.icon > svg { flex-shrink: 0; width: 16px; height: 16px; }
+
+/* micro-animation keyframes */
+@keyframes fadeSlide {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+/* hide the old ☀︎/☾ button on desktop; keep it for mobile */
+.theme-toggle { display: none; }
+@media (max-width: 640px) { .theme-toggle { display: block; } }
+
+/* keep dropdown desktop-only until mobile integration later */
+@media (max-width: 640px) { .user-dropdown { display: none; } }
 
 /* Hamburger Icon (Mobile Only) */
 .hamburger {
