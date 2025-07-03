@@ -1,40 +1,6 @@
-/* Global Reset */
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-
-/* General Page Styling */
-body {
-  margin: 0;
-  padding-top: 100px; /* Ensures content clears the fixed navbar */
-  font-family: 'Space Grotesk', sans-serif;
-  background-color: var(--vp-bg-light);
-  color: #1e293b;
-}
-
-h1 {
-  font-size: 2rem;
-}
-
-.container {
-  padding: 2rem;
-  max-width: 800px;
-  margin: 0 auto;
-}
-
-/* Root Container */
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 0 2rem; /* horizontal padding only */
-  text-align: center;
-}
-
 /* Navbar Container */
 .navbar {
-  background-color: #ffffff;
+  background-color: (var(--vp-surface));
   padding: 10px;
   position: fixed;
   top: 0;
@@ -77,7 +43,7 @@ h1 {
 .nav-link {
   padding: 6px 10px; /* slightly reduced to save space */
   text-decoration: none;
-  color: var(--vp-text-dark);
+  color: var(--vp-text);
   border: 1px solid transparent;
   border-radius: 6px;
   transition: background-color 0.2s, border-color 0.2s;
@@ -91,7 +57,7 @@ h1 {
 .nav-link.active {
   font-weight: 600;
   background-color: var(--vp-gold-600);
-  color: var(--vp-bg-light);
+  color: var(--vp-bg);
   border-radius: 6px;
 }
 

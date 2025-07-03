@@ -1,22 +1,23 @@
 /*  ─────────────────────────────
     GLOBAL TOKENS & THEMES
     ───────────────────────────── */
+/*  ==========  THEME TOKENS  ==========  */
 :root {
-  /* brand (always the same) */
   --vp-gold-600: #D4AF37;
   --vp-gold-700: #B68F1E;
 
-  /* LIGHT mode defaults */
-  --vp-bg:   #FFFFFF;
-  --vp-text: #1E1E1E;
+  /* LIGHT defaults */
+  --vp-bg:      #FFFFFF;
+  --vp-surface: #F6F6F6;
+  --vp-text:    #1E1E1E;
 }
 
-/* DARK mode overrides – enabled by JS:
-   document.documentElement.classList.add('dark')  */
 :root.dark {
-  --vp-bg:   #0A0A0A;
-  --vp-text: #F9F9F9;
+  --vp-bg:      #0A0A0A;
+  --vp-surface: #151515;
+  --vp-text:    #F9F9F9;
 }
+
 
 /*  ─────────────────────────────
     BASE ELEMENT STYLES
