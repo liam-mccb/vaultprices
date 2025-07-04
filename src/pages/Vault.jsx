@@ -1,9 +1,30 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { useAuth } from "@/context/AuthProvider";   // 👈 NEW
 import mockItems from "../data/mockItems";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 
 
 export default function Vault() {
+  const { user } = useAuth();
+
+  if (!user) {
+    return (
+      <section className="p-8 text-center space-y-4">
+        <h2 className="text-2xl font-semibold">New to Vault Prices?</h2>
+        <p>Create an account or log in to start building your Vault.</p>
+        <div className="flex justify-center gap-6">
+          <Link to="/login"  className="btn px-4 py-2 rounded border">
+            Log in
+          </Link>
+          <Link to="/signup" className="btn bg-emerald-600 text-white px-4 py-2 rounded">
+            Sign up
+          </Link>
+        </div>
+      </section>
+    );
+  }
+
   const [items, setItems] = useState([]);
   const [itemName, setItemName] = useState("");
   const [storeName, setStoreName] = useState("");

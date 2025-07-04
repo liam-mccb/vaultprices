@@ -1,20 +1,18 @@
 import { Link, useLocation } from 'react-router-dom';
-import { useState, useEffect, useRef } from 'react';   // 👈  useRef added
+import { useAuth } from '@/context/AuthProvider';
+import { useState, useEffect, useRef } from 'react';
 import { User, Settings as Cog, Moon, Sun } from 'lucide-react';
 import './Navbar.css';
 
-/* small helpers so privacy-mode won’t explode */
-const safeGet = key => { try { return localStorage.getItem(key); } catch { return null; } };
-const prefersDark = () => {
-  try { return window.matchMedia('(prefers-color-scheme: dark)').matches; }
-  catch { return false; }
-};
+/* Helpers so privacy-mode won’t explode */
+const safeGet     = key => { try { return localStorage.getItem(key); } catch { return null; } };
+const prefersDark = ()  => { try { return window.matchMedia('(prefers-color-scheme: dark)').matches; } catch { return false; } };
 
 export default function Navbar() {
-  /* ------------ state ------------ */
+  /* ------------- state ------------- */
   const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isUserMenuOpen,   setUserMenuOpen]   = useState(false);
-  const [arrowOffset, setArrowOffset] = useState(16);
+  const [arrowOffset,      setArrowOffset]    = useState(16);
   const [dark, setDark] = useState(() => {
     const saved = safeGet('theme');
     if (saved) return saved === 'dark';
@@ -28,7 +26,7 @@ export default function Navbar() {
     try { localStorage.setItem('theme', dark ? 'dark' : 'light'); } catch {}
   }, [dark]);
 
-  /* close the account dropdown on outside click */
+  /* close ≡ dropdown on outside click */
   const userBtnRef = useRef(null);
   useEffect(() => {
     const close = e =>
@@ -41,41 +39,53 @@ export default function Navbar() {
     return () => window.removeEventListener('click', close);
   }, [isUserMenuOpen]);
 
-  /* helpers for active-link styling */
+  /* link helpers */
+  const { user }   = useAuth();
   const { pathname } = useLocation();
-  const NavLink = ({ to, label, icon }) => (
-    <Link to={to} className={pathname === to ? 'nav-link active' : 'nav-link'}>
+  const NavLink = ({ to, label, icon, onClick }) => (
+    <Link
+      to={to}
+      className={pathname === to ? 'nav-link active' : 'nav-link'}
+      onClick={onClick}
+    >
       {icon && <span className="icon">{icon}</span>}
       {label}
     </Link>
   );
 
-  /* ------------ render ------------ */
+  const closeMobile   = () => setMobileMenuOpen(false);
+  const closeUserMenu = () => setUserMenuOpen(false);
+
+  /* ------------- render ------------- */
   return (
     <nav className="navbar">
       <div className="nav-inner">
-        <div className="nav-brand">Vault Prices</div>
+        {/* brand → home */}
+        <Link
+          to="/"
+          className="nav-brand"
+          onClick={() => { closeMobile(); closeUserMenu(); }}
+        >
+          Vault Prices
+        </Link>
 
-        {/* desktop links */}
+        {/* desktop rail */}
         <div className="nav-right">
-          <NavLink to="/"        label="Home" />
-          <NavLink to="/about"   label="About" />
+          <NavLink to="/about"   label="About"   />
           <NavLink to="/contact" label="Contact" />
-          <NavLink to="/vault"   label="Vault" />
+          <NavLink to="/vault"   label="My Vault" />
+          {user && <NavLink to="/profile" label="Profile" />}
 
-          {/* account hamburger (desktop) */}
+          {/* desktop account hamburger */}
           <button
             ref={userBtnRef}
             className={`user-hamburger ${isUserMenuOpen ? 'open' : ''}`}
             onClick={() => {
               const willOpen = !isUserMenuOpen;
-
               if (willOpen && userBtnRef.current) {
-                const rect = userBtnRef.current.getBoundingClientRect();
-                setArrowOffset(window.innerWidth - (rect.left + rect.width / 2));
-
+                const r = userBtnRef.current.getBoundingClientRect();
+                setArrowOffset(window.innerWidth - (r.left + r.width / 2));
               }
-              
               setUserMenuOpen(willOpen);
             }}
             aria-label="Account menu"
@@ -84,7 +94,7 @@ export default function Navbar() {
           </button>
         </div>
 
-        {/* global theme toggle (mobile only) */}
+        {/* mobile theme toggle button (always visible) */}
         <button
           className="theme-toggle"
           onClick={() => setDark(!dark)}
@@ -93,7 +103,7 @@ export default function Navbar() {
           {dark ? '☀︎' : '☾'}
         </button>
 
-        {/* main nav hamburger (mobile) */}
+        {/* main mobile hamburger */}
         <button
           className="hamburger"
           onClick={() => setMobileMenuOpen(o => !o)}
@@ -103,26 +113,51 @@ export default function Navbar() {
         </button>
       </div>
 
-      {/* mobile nav panel */}
+      {/* ---------------- MOBILE SHEET ---------------- */}
       {isMobileMenuOpen && (
-        <div className="mobile-links" onClick={() => setMobileMenuOpen(false)}>
-          <NavLink to="/"        label="Home" />
-          <NavLink to="/about"   label="About" />
-          <NavLink to="/contact" label="Contact" />
-          <NavLink to="/vault"   label="Vault" />
+        <div className="mobile-links" onClick={closeMobile}>
+          <NavLink to="/about"   label="About"   onClick={closeMobile} />
+          <NavLink to="/contact" label="Contact" onClick={closeMobile} />
+          <NavLink to="/vault"   label="My Vault" onClick={closeMobile} />
+
+          {/* Profile / Settings (signed-in only) */}
+          {user && (
+            <>
+              <NavLink to="/profile"  label="Profile"  icon={<User size={16}/>} onClick={closeMobile} />
+              <NavLink to="/settings" label="Settings" icon={<Cog  size={16}/>} onClick={closeMobile} />
+            </>
+          )}
+
+          {/* Log in / Sign up (signed-out only) */}
+          {!user && (
+            <NavLink to="/login" label="Log in / Sign up" onClick={closeMobile} />
+          )}
+
+          {/* Dark-mode toggle always last */}
+          <button className="dropdown-link" onClick={() => { setDark(!dark); closeMobile(); }}>
+            {dark ? 'Light mode' : 'Dark mode'}
+          </button>
         </div>
       )}
 
-      {/* desktop account panel */}
+      {/* --------------- DESKTOP ≡ DROPDOWN --------------- */}
       {isUserMenuOpen && (
-        <div 
-          className="user-dropdown"
-          style={{ '--arrow-offset': `${arrowOffset}px`  }}
-        >
-          <NavLink to="/profile"  label="Profile" icon={<User size={16}/>}/>
-          <NavLink to="/settings" label="Settings" icon={<Cog size={16}/>}/>
-          <button className="dropdown-link" onClick={() => setDark(!dark)}>
-            <span className="icon">{dark ? <Sun size={16}/> : <Moon size={16}/>}</span>
+        <div className="user-dropdown" style={{ '--arrow-offset': `${arrowOffset}px` }}>
+          {/* Profile / Settings (signed-in only) */}
+          {user && (
+            <>
+              <NavLink to="/profile"  label="Profile"  icon={<User size={16}/>} onClick={closeUserMenu} />
+              <NavLink to="/settings" label="Settings" icon={<Cog  size={16}/>} onClick={closeUserMenu} />
+            </>
+          )}
+
+          {/* Log in / Sign up (signed-out only) */}
+          {!user && (
+            <NavLink to="/login" label="Log in / Sign up" onClick={closeUserMenu} />
+          )}
+
+          {/* Dark-mode toggle always last */}
+          <button className="dropdown-link" onClick={() => { setDark(!dark); closeUserMenu(); }}>
             {dark ? 'Light mode' : 'Dark mode'}
           </button>
         </div>

@@ -29,6 +29,7 @@
   font-family: 'Space Grotesk', sans-serif;
   font-size: 2rem;
   font-weight: bold;
+  text-decoration: none;      /* remove underline */
 }
 
 /* Right-Aligned Nav Links (Desktop) */
