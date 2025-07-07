@@ -11,6 +11,8 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Welcome from './pages/Welcome';
 import Navbar from '@/components/layout/Navbar';
+import ResetPassword from './pages/ResetPassword';
+
 
 function PrivateRoute({ children}) {
   const { user } = useAuth ();
@@ -34,6 +36,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/welcome" element={<Welcome />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
 
           {/* protected area */}
           <Route path="/vault" element={<PrivateRoute><Vault /></PrivateRoute>} />
