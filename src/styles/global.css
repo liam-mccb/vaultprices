@@ -3,6 +3,7 @@
     ───────────────────────────── */
 /*  ==========  THEME TOKENS  ==========  */
 :root {
+  --vp-font-scale: 1;
   --vp-gold-600: #D4AF37;
   --vp-gold-700: #B68F1E;
 
@@ -33,6 +34,7 @@ html, body {
   color: var(--vp-text);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  font-size: calc(16px * var(--vp-font-scale));
 }
 
 /* Links (brand variables stay gold) */

@@ -5,6 +5,7 @@ import '@/styles/layout.css'
 import Home from './pages/Home';
 import About from './pages/About';
 import Contact from './pages/Contact';
+import Settings from './pages/Settings';
 import Vault from './pages/Vault'; // make sure this is here too
 import Login from './pages/Login';
 import Signup from './pages/Signup';
@@ -26,6 +27,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/settings" element={<Settings />} />
           <Route path="/vault" element={<Vault />} />
 
           {/* auth */}

@@ -74,7 +74,6 @@ export default function Navbar() {
           <NavLink to="/about"   label="About"   />
           <NavLink to="/contact" label="Contact" />
           <NavLink to="/vault"   label="My Vault" />
-          {user && <NavLink to="/profile" label="Profile" />}
 
           {/* desktop account hamburger */}
           <button
@@ -93,15 +92,6 @@ export default function Navbar() {
             ≡
           </button>
         </div>
-
-        {/* mobile theme toggle button (always visible) */}
-        <button
-          className="theme-toggle"
-          onClick={() => setDark(!dark)}
-          aria-label="Toggle dark / light mode"
-        >
-          {dark ? '☀︎' : '☾'}
-        </button>
 
         {/* main mobile hamburger */}
         <button
