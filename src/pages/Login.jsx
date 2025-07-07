@@ -24,6 +24,7 @@ export default function Login() {
 
     if (error) {
       console.log(error);
+      console.log('[supabase] sign-in error ->', error);
       setErr(error.message);
     }
     setLoading(false);
