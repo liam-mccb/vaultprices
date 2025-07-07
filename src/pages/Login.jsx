@@ -18,7 +18,7 @@ export default function Login() {
     setErr(null);
 
     const { error } = await supabase.auth.signInWithPassword({
-      email,
+      email: email.trim(),
       password,
     });
 
@@ -26,7 +26,21 @@ export default function Login() {
       console.log(error);
       setErr(error.message);
     }
+    setLoading(false);
   }
+
+  {err === 'Email not confirmed' && (
+    <button
+      type="button"
+      onClick={async () => {
+        await supabase.auth.resend({ type: 'signup', email: email.trim() });
+        setErr('Confirmation e-mail sent – check your inbox.');
+      }}
+    >
+      Resend confirmation e-mail
+    </button>
+  )}
+
 
   return (
     <main className="auth-card">
