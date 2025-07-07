@@ -20,7 +20,7 @@
   max-width: 1440px;
   margin: 0 auto;
   padding: 0 24px;
-  overflow: hidden; /* Optional: clip overly wide children */
+  overflow: visible; /* Optional: clip overly wide children */
 }
 
 /* Brand Name */
@@ -62,6 +62,11 @@
   border-radius: 6px;
 }
 
+/* anchor wrapper */
+.user-anchor{
+  position: relative;   /* makes the dropdown position relative to the button */
+}
+
 /* ─── user hamburger (desktop only) ────────────────────────── */
 .user-hamburger {
   background: none;
@@ -85,8 +90,9 @@
 /* === account dropdown deluxe === */
 .user-dropdown {
   position: absolute;
-  top: calc(100% + 4px);     /* 4-px gap below bar  */
-  right: 0;                  /* hug right edge       */
+  top: calc(100% + 0.5rem);   
+  left: auto;        
+  right: 0;         
 
   width: 200px;
   background: var(--vp-surface);
@@ -106,7 +112,7 @@
   content: '';
   position: absolute;
   top: -6px;
-  right: var(--arrow-offset, 16px);               /* aligns under ≡ button */
+  right: calc(var(--arrow-offset, 16px));               /* aligns under ≡ button */
   width: 10px;
   height: 10px;
   background: var(--vp-surface);

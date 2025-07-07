@@ -75,22 +75,46 @@ export default function Navbar() {
           <NavLink to="/contact" label="Contact" />
           <NavLink to="/vault"   label="My Vault" />
 
-          {/* desktop account hamburger */}
-          <button
-            ref={userBtnRef}
-            className={`user-hamburger ${isUserMenuOpen ? 'open' : ''}`}
-            onClick={() => {
-              const willOpen = !isUserMenuOpen;
-              if (willOpen && userBtnRef.current) {
-                const r = userBtnRef.current.getBoundingClientRect();
-                setArrowOffset(window.innerWidth - (r.left + r.width / 2));
-              }
-              setUserMenuOpen(willOpen);
-            }}
-            aria-label="Account menu"
-          >
-            ≡
-          </button>
+          {/* account hamburger + dropdown (anchored) */}
+          <div className="user-anchor">
+            <button
+              ref={userBtnRef}
+              className={`user-hamburger ${isUserMenuOpen ? 'open' : ''}`}
+              onClick={() => {
+                const willOpen = !isUserMenuOpen;
+                if (willOpen && userBtnRef.current) {
+                  /* arrow needs half the button width */
+                  setArrowOffset(userBtnRef.current.offsetWidth / 2 - 5);
+                }
+                setUserMenuOpen(willOpen);
+              }}
+              aria-label="Account menu"
+            >
+              ≡
+            </button>
+
+            {isUserMenuOpen && (
+              <div
+                className="user-dropdown"
+                style={{ '--arrow-offset': `${arrowOffset}px` }}
+                onClick={closeUserMenu}
+              >
+                {user ? (
+                  <>
+                    <NavLink to="/profile"  label="Profile"  icon={<User size={16}/>} />
+                    <NavLink to="/settings" label="Settings" icon={<Cog  size={16}/>} />
+                  </>
+                ) : (
+                  <NavLink to="/login" label="Log in / Sign up" />
+                )}
+
+                {/* (optional) dark-mode link or remove entirely */}
+                <button className="dropdown-link" onClick={() => setDark(!dark)}>
+                  {dark ? 'Light mode' : 'Dark mode'}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* main mobile hamburger */}
@@ -130,28 +154,6 @@ export default function Navbar() {
         </div>
       )}
 
-      {/* --------------- DESKTOP ≡ DROPDOWN --------------- */}
-      {isUserMenuOpen && (
-        <div className="user-dropdown" style={{ '--arrow-offset': `${arrowOffset}px` }}>
-          {/* Profile / Settings (signed-in only) */}
-          {user && (
-            <>
-              <NavLink to="/profile"  label="Profile"  icon={<User size={16}/>} onClick={closeUserMenu} />
-              <NavLink to="/settings" label="Settings" icon={<Cog  size={16}/>} onClick={closeUserMenu} />
-            </>
-          )}
-
-          {/* Log in / Sign up (signed-out only) */}
-          {!user && (
-            <NavLink to="/login" label="Log in / Sign up" onClick={closeUserMenu} />
-          )}
-
-          {/* Dark-mode toggle always last */}
-          <button className="dropdown-link" onClick={() => { setDark(!dark); closeUserMenu(); }}>
-            {dark ? 'Light mode' : 'Dark mode'}
-          </button>
-        </div>
-      )}
     </nav>
   );
 }

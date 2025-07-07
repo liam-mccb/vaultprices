@@ -22,8 +22,10 @@ export default function Login() {
       password,
     });
 
-    if (error) setErr(error.message);
-    setLoading(false);
+    if (error) {
+      console.log(error);
+      setErr(error.message);
+    }
   }
 
   return (
