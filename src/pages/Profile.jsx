@@ -1,62 +1,68 @@
 import { useEffect, useState } from 'react';
-import './Settings.css';              // optional, keeps page-specific styles
+import { useAuth } from '@/context/AuthProvider';
+import supabase from '@/supabaseClient';
 
-export default function Settings() {
-  /* ---- persistent theme ---- */
-  const [dark, setDark] = useState(() =>
-    localStorage.getItem('theme') === 'dark'
-  );
+export default function Profile() {
+  const { user } = useAuth();                     // already in context
+  const [fullName, setFullName] = useState('');
+  const [dob, setDob]           = useState('');
+  const [msg, setMsg]           = useState('');
+  const [loading, setLoading]   = useState(false);
 
+  /* preload existing metadata when the page mounts */
   useEffect(() => {
-    document.documentElement.classList.toggle('dark',  dark);
-    document.documentElement.classList.toggle('light', !dark);
-    localStorage.setItem('theme', dark ? 'dark' : 'light');
-  }, [dark]);
+    if (user) {
+      const meta = user.user_metadata || {};
+      setFullName(meta.full_name      || '');
+      setDob(      meta.date_of_birth || '');
+    }
+  }, [user]);
 
-  /* ---- global font scale ---- */
-  const [font, setFont] = useState(() =>
-    Number(localStorage.getItem('fontScale')) || 1
-  );
+  async function handleUpdate(e) {
+    e.preventDefault();
+    setMsg('');
+    setLoading(true);
 
-  useEffect(() => {
-    document.documentElement.style.setProperty('--vp-font-scale', font);
-    localStorage.setItem('fontScale', font);
-  }, [font]);
+    const { error } = await supabase.auth.updateUser({
+      data: {
+        full_name:      fullName.trim(),
+        date_of_birth:  dob.trim(),
+      },
+    });
+
+    setLoading(false);
+    setMsg(error ? `Update failed: ${error.message}` : 'Profile updated!');
+  }
 
   return (
-    <div className="container">
-      <h1>Settings</h1>
+    <main className="auth-card">
+      <h1>Your Profile</h1>
 
-      {/* theme switch */}
-      <section>
-        <h2>Appearance</h2>
-        <label className="switch">
+      {msg && <p>{msg}</p>}
+
+      <form onSubmit={handleUpdate} style={{ display: 'grid', gap: '0.75rem' }}>
+        <label>
+          Full Name
           <input
-            type="checkbox"
-            checked={dark}
-            onChange={e => setDark(e.target.checked)}
+            type="text"
+            value={fullName}
+            onChange={e => setFullName(e.target.value)}
           />
-          <span className="slider" /> {/* purely cosmetic */}
-          <span>{dark ? 'Dark mode' : 'Light mode'}</span>
         </label>
-      </section>
 
-      {/* font slider */}
-      <section>
-        <h2>Font size</h2>
-        <input
-          type="range"
-          min="0.8"
-          max="1.4"
-          step="0.05"
-          value={font}
-          onChange={e => setFont(Number(e.target.value))}
-          style={{ width: '100%' }}
-        />
-        <p style={{ marginTop: 8 }}>
-          {Math.round(font * 100)} % of default
-        </p>
-      </section>
-    </div>
+        <label>
+          Date of Birth
+          <input
+            type="date"
+            value={dob}
+            onChange={e => setDob(e.target.value)}
+          />
+        </label>
+
+        <button disabled={loading}>
+          {loading ? 'Saving…' : 'Save Changes'}
+        </button>
+      </form>
+    </main>
   );
 }

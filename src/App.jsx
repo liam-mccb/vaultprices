@@ -7,6 +7,7 @@ import About from './pages/About';
 import Contact from './pages/Contact';
 import Settings from './pages/Settings';
 import Vault from './pages/Vault'; // make sure this is here too
+import Profile from './pages/Profile';  
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Welcome from './pages/Welcome';
@@ -42,6 +43,7 @@ function App() {
 
           {/* protected area */}
           <Route path="/vault" element={<PrivateRoute><Vault /></PrivateRoute>} />
+          <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
         </Routes>
       </AuthProvider>
     </Router>
