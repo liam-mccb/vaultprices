@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthProvider';
 import supabase from '@/supabaseClient';
-import './profile.css';          // ← add this
+import '@/pages/profile.css';          // ← add this
 
 export default function Profile() {
   const { user } = useAuth();
