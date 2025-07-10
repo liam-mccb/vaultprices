@@ -1,10 +1,19 @@
-/* ────────── Layout ────────── */
-.profile-card {
-  text-align: left;          /* stop global centering */
-  max-width: 540px;
-  margin: 0;                 /* flush to left */
-  padding: 2rem 1rem;
+/* outer wrapper (no centering) */
+.profile-page {
+  padding-top: 2rem;
+  text-align: left;
 }
+
+/* reuse the same container dimensions as .nav-inner */
+.page-inner {
+  max-width: 1440px;         /* same as nav-inner */
+  margin: 0 auto;            /* keeps it centred at huge widths */
+  padding: 0 24px;           /* same horizontal inset */
+}
+
+/* existing rules stay the same …                                   */
+/* .field-row, .field-input, button, .msg from previous answer      */
+
 
 /* ────────── Field rows ────────── */
 .field-row {
