@@ -1,15 +1,16 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthProvider';
 import supabase from '@/supabaseClient';
+import './profile.css';          // ← add this
 
 export default function Profile() {
-  const { user } = useAuth();                     // already in context
+  const { user } = useAuth();
   const [fullName, setFullName] = useState('');
-  const [dob, setDob]           = useState('');
-  const [msg, setMsg]           = useState('');
-  const [loading, setLoading]   = useState(false);
+  const [dob,      setDob]      = useState('');
+  const [msg,      setMsg]      = useState('');
+  const [loading,  setLoading]  = useState(false);
 
-  /* preload existing metadata when the page mounts */
+  /* preload existing values */
   useEffect(() => {
     if (user) {
       const meta = user.user_metadata || {};
@@ -20,14 +21,10 @@ export default function Profile() {
 
   async function handleUpdate(e) {
     e.preventDefault();
-    setMsg('');
-    setLoading(true);
+    setMsg(''); setLoading(true);
 
     const { error } = await supabase.auth.updateUser({
-      data: {
-        full_name:      fullName.trim(),
-        date_of_birth:  dob.trim(),
-      },
+      data: { full_name: fullName.trim(), date_of_birth: dob.trim() },
     });
 
     setLoading(false);
@@ -35,24 +32,26 @@ export default function Profile() {
   }
 
   return (
-    <main className="auth-card">
-      <h1>Your Profile</h1>
+    <main className="profile-card">
+      <h1>Your profile</h1>
 
-      {msg && <p>{msg}</p>}
+      {msg && <p className="msg">{msg}</p>}
 
-      <form onSubmit={handleUpdate} style={{ display: 'grid', gap: '0.75rem' }}>
-        <label>
-          Full Name
+      <form onSubmit={handleUpdate}>
+        <label className="field-row">
+          <span className="field-label">Full name:</span>
           <input
+            className="field-input"
             type="text"
             value={fullName}
             onChange={e => setFullName(e.target.value)}
           />
         </label>
 
-        <label>
-          Date of Birth
+        <label className="field-row">
+          <span className="field-label">Date of birth:</span>
           <input
+            className="field-input"
             type="date"
             value={dob}
             onChange={e => setDob(e.target.value)}
@@ -60,7 +59,7 @@ export default function Profile() {
         </label>
 
         <button disabled={loading}>
-          {loading ? 'Saving…' : 'Save Changes'}
+          {loading ? 'Saving…' : 'Save changes'}
         </button>
       </form>
     </main>
