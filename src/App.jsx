@@ -12,6 +12,8 @@ import Signup from './pages/Signup';
 import Welcome from './pages/Welcome';
 import Navbar from '@/components/layout/Navbar';
 import ResetPassword from './pages/ResetPassword';
+import { useAuth } from './context/AuthProvider';
+
 
 
 function PrivateRoute({ children}) {

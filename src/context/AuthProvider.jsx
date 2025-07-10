@@ -1,47 +1,63 @@
+// src/context/AuthProvider.jsx
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import supabase from '../supabaseClient';              // adjust path if you use @/ alias
+import supabase from '@/supabaseClient';               // :contentReference[oaicite:5]{index=5}
 
-// ①  create the context
 const AuthCtx = createContext(null);
-
-// ②  export the hook ***by name***
 export const useAuth = () => useContext(AuthCtx);
 
-// ③  default export = provider component
 export default function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    /** ------------------------------------------------------
-     * 1) Handle magic-link / password-recovery redirects
-     *    This stores the session *and* cleans the hash.
-     * ----------------------------------------------------- */
-    supabase.auth
-      .getSessionFromUrl({ storeSession: true })
-      .then(({ data, error }) => {
-        if (error) console.error('[supabase] getSessionFromUrl', error);
+    (async () => {
+      /* -------- 1. OAuth redirect -------- */
+      const search = new URLSearchParams(window.location.search);
+      if (search.has('code')) {
+        const { data, error } = await supabase.auth.exchangeCodeForSession();
+        if (error) console.error('[supabase] exchangeCodeForSession', error);
+        if (data?.session) setSession(data.session);
 
-        if (data?.session) {
-          setSession(data.session);
+        // clean the ?code=… from the bar
+        window.history.replaceState({}, document.title, '/');
+      }
 
-          // If the hash was a recovery link → route to reset form
-          if (window.location.hash.includes('type=recovery')) {
-            navigate('/reset-password', { replace: true });
-          }
-        } else {
-          // Not a magic link → fetch existing cookie/token session
-          supabase.auth.getSession().then(({ data }) => setSession(data.session));
+      /* -------- 2. Magic-link / pw-reset (#access_token …) -------- */
+      if (window.location.hash.includes('access_token')) {
+        const hash = new URLSearchParams(window.location.hash.slice(1));
+        const access_token  = hash.get('access_token');
+        const refresh_token = hash.get('refresh_token');
+
+        if (access_token && refresh_token) {
+          const { data, error } = await supabase.auth.setSession({
+            access_token,
+            refresh_token,
+          });
+          if (error) console.error('[supabase] setSession', error);
+          if (data?.session) setSession(data.session);
         }
-      });
+        window.history.replaceState({}, document.title, '/');
+      }
 
-    // subscribe to changes
+      /* -------- 3. Normal load -------- */
+      if (!session) {
+        const { data } = await supabase.auth.getSession();
+        setSession(data.session);
+      }
+
+      /* -------- 4. Password-recovery deep-link -------- */
+      if (window.location.hash.includes('type=recovery')) {
+        navigate('/reset-password', { replace: true });
+      }
+    })();
+
+    // live updates
     const { data: sub } = supabase.auth.onAuthStateChange(
-      (_evt, newSession) => setSession(newSession)
+      (_event, newSession) => setSession(newSession)
     );
     return () => sub.subscription.unsubscribe();
-  }, []);
+  }, [navigate]);
 
   return (
     <AuthCtx.Provider value={{ session, user: session?.user }}>
