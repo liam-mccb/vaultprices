@@ -9,6 +9,7 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [err, setErr]           = useState(null);
   const [loading, setLoading]   = useState(false);
+  const [info, setInfo]         = useState(null);
 
   if (user) return <Navigate to="/vault" replace />;   // already logged in
 
@@ -30,6 +31,32 @@ export default function Login() {
     setLoading(false);
   }
 
+  async function handleForgotPassword() {
+    // basic guard - user must type an e-mail first
+    if (!email.trim()) {
+      setErr('Enter your e-mail above, then click “Forgot password?” again.');
+      return;
+    }
+
+    setLoading(true);
+    setErr(null); setInfo(null);
+
+    const { error } = await supabase.auth.resetPasswordForEmail(
+      email.trim(),
+      {
+        redirectTo: `${window.location.origin}/reset-password`,   // 👈 key line
+      }
+    );
+
+    if (error) {
+      console.error('[supabase] reset-email error →', error);
+      setErr(error.message);
+    } else {
+      setInfo('Reset link sent – check your inbox.');
+    }
+    setLoading(false);
+  }
+
   {err === 'Email not confirmed' && (
     <button
       type="button"
@@ -47,6 +74,7 @@ export default function Login() {
     <main className="auth-card">
       <h1>Log in</h1>
       {err && <p className="error">{err}</p>}
+      {info && <p className="info">{info}</p>}
       <form onSubmit={handleSubmit}>
         <input
           type="email"
@@ -64,6 +92,18 @@ export default function Login() {
         />
         <button disabled={loading}>{loading ? '…' : 'Log in'}</button>
       </form>
+
+
+      <button
+        type="button"
+        className="text-link"
+        onClick={handleForgotPassword}
+        disabled={loading}
+        style={{ marginTop: '0.75rem' }}
+      >
+        Forgot password?
+      </button>
+
       <p>No account? <Link to="/signup">Sign up</Link></p>
     </main>
   );

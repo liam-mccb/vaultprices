@@ -37,18 +37,22 @@ export default function AuthProvider({ children }) {
           if (error) console.error('[supabase] setSession', error);
           if (data?.session) setSession(data.session);
         }
+        /* if the link is a password-recovery link, jump to the form
+          BEFORE we strip the hash so the condition stays true */
+        if (hash.get('type') === 'recovery') {
+          navigate('/reset-password', { replace: true });
+        }
+
+        // now clean the URL bar
         window.history.replaceState({}, document.title, '/');
       }
+
+
 
       /* -------- 3. Normal load -------- */
       if (!session) {
         const { data } = await supabase.auth.getSession();
         setSession(data.session);
-      }
-
-      /* -------- 4. Password-recovery deep-link -------- */
-      if (window.location.hash.includes('type=recovery')) {
-        navigate('/reset-password', { replace: true });
       }
     })();
 
