@@ -3,6 +3,10 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import supabase from '../supabaseClient';
 
+// 8–20 chars, 1 lower, 1 upper, 1 digit, 1 special
+const PWD_REGEX =
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_])[A-Za-z\d\W_]{8,20}$/;
+
 const ResetPassword = () => {
   const navigate = useNavigate();
   const [pwd, setPwd] = useState('');
@@ -11,7 +15,16 @@ const ResetPassword = () => {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    setLoading(true); setErr('');
+    setErr('');
+
+    if (!PWD_REGEX.test(pwd)) {
+      setErr(
+        'Password must be 8–20 characters and include upper & lower case letters, a number, and a special character.'
+      );
+      return;
+    }
+
+    setLoading(true);
     const { error } = await supabase.auth.updateUser({ password: pwd.trim() });
     if (error) setErr(error.message);
     else navigate('/vault');
@@ -30,6 +43,11 @@ const ResetPassword = () => {
           onChange={e => setPwd(e.target.value)}
           required
         />
+
+        <p className="hint">
+          8–20 chars, 1 lower, 1 UPPER, 1 number, 1 special
+        </p>
+
         <button disabled={loading}>
           {loading ? '…' : 'Update password'}
         </button>
