@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthProvider";   // 👈 NEW
 import mockItems from "../data/mockItems";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import PriceChart from "@/components/charts/PriceChart";
 
 
 export default function Vault() {
@@ -201,16 +201,15 @@ export default function Vault() {
             )}
 
             {priceHistory[item.id] && priceHistory[item.id].length > 1 && (
-  <div className="mt-4">
-    <ResponsiveContainer width="100%" height={200}>
-      <LineChart data={priceHistory[item.id].slice(-6)}>
-        <XAxis dataKey="time" />
-        <YAxis />
-        <Tooltip />
-        <Line type="monotone" dataKey="price" stroke="#10b981" dot={false} />
-      </LineChart>
-    </ResponsiveContainer>
-  </div>
+              <div className="mt-4">
+                <PriceChart
+                  data={priceHistory[item.id].slice(-6)}
+                  xKey="time"
+                  yKey="price"
+                  height={200}
+                  color="#10b981"
+                />
+              </div>
 )}
 
           </div>

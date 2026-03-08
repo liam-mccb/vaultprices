@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthProvider';
 import { useState, useEffect, useRef } from 'react';
-import { User, Settings as Cog, Moon, Sun } from 'lucide-react';
+import { User, Settings as Cog } from 'lucide-react';
 import './Navbar.css';
 
 /* Helpers so privacy-mode won’t explode */
@@ -73,6 +73,7 @@ export default function Navbar() {
         <div className="nav-right">
           <NavLink to="/about"   label="About"   />
           <NavLink to="/contact" label="Contact" />
+          <NavLink to="/groceries" label="Groceries" />
           <NavLink to="/vault"   label="My Vault" />
 
           {/* account hamburger + dropdown (anchored) */}
@@ -132,6 +133,7 @@ export default function Navbar() {
         <div className="mobile-links" onClick={closeMobile}>
           <NavLink to="/about"   label="About"   onClick={closeMobile} />
           <NavLink to="/contact" label="Contact" onClick={closeMobile} />
+          <NavLink to="/groceries" label="Groceries" onClick={closeMobile} />
           <NavLink to="/vault"   label="My Vault" onClick={closeMobile} />
 
           {/* Profile / Settings (signed-in only) */}

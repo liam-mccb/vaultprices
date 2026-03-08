@@ -11,6 +11,7 @@ import Profile from './pages/Profile';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Welcome from './pages/Welcome';
+import Groceries from './pages/Groceries';
 import Navbar from '@/components/layout/Navbar';
 import ResetPassword from './pages/ResetPassword';
 import { useAuth } from './context/AuthProvider';
@@ -32,8 +33,8 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/groceries" element={<Groceries />} />
           <Route path="/settings" element={<Settings />} />
-          <Route path="/vault" element={<Vault />} />
 
           {/* auth */}
           <Route path="/login" element={<Login />} />
