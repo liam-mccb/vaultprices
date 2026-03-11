@@ -16,6 +16,25 @@ export default function PriceChart({
     .map((point) => Number(point?.[yKey]))
     .filter((value) => Number.isFinite(value));
 
+  const getNiceCurrencyStep = (range) => {
+    if (!Number.isFinite(range) || range <= 0) return 0.25;
+
+    const targetIntervals = 3;
+    const roughStep = range / targetIntervals;
+    const exponent = Math.floor(Math.log10(roughStep));
+    const power = 10 ** exponent;
+    const multipliers = [1, 2.5, 5, 10];
+
+    for (const multiplier of multipliers) {
+      const candidate = multiplier * power;
+      if (candidate >= roughStep) {
+        return candidate;
+      }
+    }
+
+    return 10 * power;
+  };
+
   const buildStandardTicks = () => {
     if (!standardizeYAxis || priceValues.length === 0) {
       return { ticks: undefined, domain: undefined };
@@ -24,11 +43,7 @@ export default function PriceChart({
     const minValue = Math.min(...priceValues);
     const maxValue = Math.max(...priceValues);
     const range = maxValue - minValue;
-
-    let step = 1;
-    if (range <= 1) step = 0.1;
-    else if (range <= 2.5) step = 0.25;
-    else if (range <= 5) step = 0.5;
+    const step = getNiceCurrencyStep(range);
 
     const safeMin = range === 0 ? minValue - step : minValue;
     const safeMax = range === 0 ? maxValue + step : maxValue;
@@ -59,8 +74,8 @@ export default function PriceChart({
         {showHorizontalGrid && <CartesianGrid stroke="#d9d9d9" strokeWidth={0.6} vertical={false} />}
         <XAxis dataKey={xKey} />
         <YAxis tickFormatter={formatter} width={80} ticks={ticks} domain={domain} />
-        <Tooltip formatter={formatter} />
-        <Line type="monotone" dataKey={yKey} stroke={color} dot={false} />
+        <Tooltip formatter={formatter} labelStyle={{ color: '#000' }} />
+        <Line type="linear" dataKey={yKey} stroke={color} dot={false} />
       </LineChart>
     </ResponsiveContainer>
   );

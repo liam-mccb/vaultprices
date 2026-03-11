@@ -1,7 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import PriceChart from '@/components/charts/PriceChart';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000';
+const SEARCH_DEBOUNCE_MS = 300;
+const DEFAULT_GROCERY_ITEM = 'eggs';
 
 const SUPPORTED_ITEMS = [
   { id: 'eggs', name: 'Eggs', unit: '12 ct' },
@@ -28,6 +30,33 @@ const formatLabel = (value) => {
     year: 'numeric',
   });
 };
+
+const formatItemName = (value) => {
+  if (typeof value !== 'string' || !value.trim()) return '';
+  return value
+    .replace(/[-_]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+};
+
+const normalizeRequestValue = (value) => {
+  if (typeof value !== 'string') return '';
+  return value.trim().toLowerCase();
+};
+
+const buildFallbackMeta = (item) => {
+  const supportedMatch = SUPPORTED_ITEMS.find(({ id }) => id === item);
+  if (supportedMatch) return supportedMatch;
+
+  return {
+    id: item,
+    name: formatItemName(item),
+    unit: '',
+  };
+};
+
+const DEFAULT_ITEM = buildFallbackMeta(DEFAULT_GROCERY_ITEM);
 
 const normalizeGroceryResponse = (raw, fallback) => {
   const historySource = Array.isArray(raw?.history)
@@ -60,24 +89,104 @@ const normalizeGroceryResponse = (raw, fallback) => {
     : [];
 
   return {
-    id: raw?.item ?? raw?.seriesId ?? fallback.id,
-    name: raw?.name ?? fallback.name,
-    unit: raw?.unit ?? fallback.unit,
+    id: raw?.item ?? raw?.requestedItem ?? raw?.seriesId ?? fallback.id,
+    name:
+      raw?.canonicalName ??
+      raw?.name ??
+      raw?.title ??
+      fallback.name,
+    unit: raw?.unit ?? raw?.units ?? fallback.unit,
+    sourceName: raw?.sourceName ?? raw?.source ?? raw?.provider ?? raw?.dataset ?? '',
     currentPrices,
     history,
   };
 };
 
+const dedupeSuggestions = (suggestions) => {
+  const seen = new Set();
+
+  return suggestions.filter((suggestion) => {
+    const key = `${suggestion.requestValue}::${suggestion.label}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
+
+const buildSuggestions = (payload, query) => {
+  const topCandidate = Array.isArray(payload?.candidates) ? payload.candidates[0] : null;
+  const topCandidateTitle =
+    typeof topCandidate?.title === 'string' && topCandidate.title.trim()
+      ? topCandidate.title.trim()
+      : '';
+
+  const curated = payload?.curatedMatch?.canonicalItem
+    ? [{
+        id: `curated-${payload.curatedMatch.canonicalItem}`,
+        label: payload?.curatedMatch?.canonicalName ?? formatItemName(payload.curatedMatch.canonicalItem),
+        canonicalItem: payload.curatedMatch.canonicalItem,
+        secondaryLabel: 'Best match',
+        requestValue: normalizeRequestValue(payload.curatedMatch.canonicalItem),
+        sourceLabel: topCandidateTitle,
+        fallbackName: payload?.curatedMatch?.canonicalName ?? formatItemName(payload.curatedMatch.canonicalItem),
+      }]
+    : [];
+
+  const candidates = Array.isArray(payload?.candidates)
+    ? payload.candidates.slice(0, 5).map((candidate) => {
+        const canonicalItem = payload?.curatedMatch?.canonicalItem ?? '';
+        const canonicalName = payload?.curatedMatch?.canonicalName ?? '';
+        const readableLabel = candidate?.title ?? canonicalName ?? formatItemName(candidate?.seriesId) ?? query;
+        const safeRequestValue =
+          normalizeRequestValue(canonicalItem) ||
+          normalizeRequestValue(payload?.normalizedQuery) ||
+          normalizeRequestValue(payload?.query) ||
+          normalizeRequestValue(query) ||
+          (typeof candidate?.title === 'string' ? candidate.title.trim() : '');
+        const secondaryParts = [
+          canonicalName && canonicalName !== readableLabel ? canonicalName : '',
+          candidate?.units || '',
+          candidate?.frequencyShort || candidate?.frequency || '',
+        ].filter(Boolean);
+
+        return {
+          id: candidate?.seriesId ?? readableLabel,
+          label: readableLabel,
+          canonicalItem,
+          secondaryLabel: secondaryParts.join(' - '),
+          requestValue: safeRequestValue,
+          sourceLabel: readableLabel,
+          fallbackName: canonicalName || readableLabel,
+        };
+      })
+    : [];
+
+  return dedupeSuggestions([...curated, ...candidates]).slice(0, 5);
+};
+
 export default function Groceries() {
-  const [selectedItem, setSelectedItem] = useState(SUPPORTED_ITEMS[0].id);
   const [selectedRange, setSelectedRange] = useState('max');
   const [grocery, setGrocery] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [searchInput, setSearchInput] = useState(DEFAULT_ITEM.name);
+  const [historyRequest, setHistoryRequest] = useState({
+    item: DEFAULT_GROCERY_ITEM,
+    displayValue: DEFAULT_ITEM.name,
+    fallbackMeta: DEFAULT_ITEM,
+  });
+  const [suggestions, setSuggestions] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState('');
+  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
+  const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
+
+  const searchContainerRef = useRef(null);
+  const skipNextSearchRef = useRef(false);
 
   const selectedMeta = useMemo(
-    () => SUPPORTED_ITEMS.find((item) => item.id === selectedItem) ?? SUPPORTED_ITEMS[0],
-    [selectedItem]
+    () => historyRequest.fallbackMeta ?? buildFallbackMeta(historyRequest.item),
+    [historyRequest]
   );
 
   useEffect(() => {
@@ -89,9 +198,10 @@ export default function Groceries() {
       setGrocery(null);
 
       try {
-        const response = await fetch(`${API_BASE_URL}/api/groceries/${selectedItem}`, {
-          signal: controller.signal,
-        });
+        const response = await fetch(
+          `${API_BASE_URL}/api/groceries/${encodeURIComponent(historyRequest.item)}`,
+          { signal: controller.signal }
+        );
         if (!response.ok) {
           throw new Error(`Request failed (${response.status})`);
         }
@@ -115,7 +225,80 @@ export default function Groceries() {
     loadGrocery();
 
     return () => controller.abort();
-  }, [selectedItem, selectedMeta]);
+  }, [historyRequest, selectedMeta]);
+
+  useEffect(() => {
+    if (skipNextSearchRef.current) {
+      skipNextSearchRef.current = false;
+      setSuggestions([]);
+      setSearchLoading(false);
+      setSearchError('');
+      setSuggestionsOpen(false);
+      setActiveSuggestionIndex(-1);
+      return undefined;
+    }
+
+    const trimmedQuery = searchInput.trim();
+
+    if (!trimmedQuery) {
+      setSuggestions([]);
+      setSearchLoading(false);
+      setSearchError('');
+      setActiveSuggestionIndex(-1);
+      return undefined;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(async () => {
+      setSearchLoading(true);
+      setSearchError('');
+
+      try {
+        const response = await fetch(
+          `${API_BASE_URL}/api/groceries/search?q=${encodeURIComponent(trimmedQuery)}`,
+          { signal: controller.signal }
+        );
+        if (!response.ok) {
+          throw new Error(`Request failed (${response.status})`);
+        }
+
+        const payload = await response.json();
+        const nextSuggestions = buildSuggestions(payload, trimmedQuery);
+        setSuggestions(nextSuggestions);
+        setSuggestionsOpen(true);
+        setActiveSuggestionIndex(nextSuggestions.length > 0 ? 0 : -1);
+      } catch (requestError) {
+        if (requestError.name === 'AbortError') return;
+        setSuggestions([]);
+        setSearchError(
+          `Unable to search grocery items right now. ${
+            requestError?.message ?? ''
+          }`.trim()
+        );
+        setSuggestionsOpen(true);
+        setActiveSuggestionIndex(-1);
+      } finally {
+        setSearchLoading(false);
+      }
+    }, SEARCH_DEBOUNCE_MS);
+
+    return () => {
+      controller.abort();
+      window.clearTimeout(timeoutId);
+    };
+  }, [searchInput]);
+
+  useEffect(() => {
+    const handlePointerDown = (event) => {
+      if (!searchContainerRef.current?.contains(event.target)) {
+        setSuggestionsOpen(false);
+        setActiveSuggestionIndex(-1);
+      }
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    return () => document.removeEventListener('mousedown', handlePointerDown);
+  }, []);
 
   const filteredHistory = useMemo(() => {
     if (!grocery?.history || selectedRange === 'max') return grocery?.history ?? [];
@@ -147,31 +330,198 @@ export default function Groceries() {
 
   const showUnit = Boolean(grocery?.unit) && grocery.unit.toLowerCase() !== 'lin';
 
+  const submitSelection = (selection) => {
+    const nextValue =
+      normalizeRequestValue(selection?.canonicalItem) ||
+      normalizeRequestValue(selection?.requestValue) ||
+      (typeof selection?.label === 'string' ? selection.label.trim() : '');
+    if (!nextValue) return;
+
+    const fallbackMeta = selection?.canonicalItem
+      ? buildFallbackMeta(selection.canonicalItem)
+      : buildFallbackMeta(nextValue);
+
+    setHistoryRequest({
+      item: nextValue,
+      displayValue: selection?.sourceLabel ?? selection?.label ?? nextValue,
+      fallbackMeta: {
+        ...fallbackMeta,
+        name: selection?.fallbackName ?? selection?.label ?? fallbackMeta.name,
+      },
+    });
+    skipNextSearchRef.current = true;
+    setSearchInput(selection?.label ?? nextValue);
+    setSuggestionsOpen(false);
+    setActiveSuggestionIndex(-1);
+    setSearchError('');
+  };
+
+  const handleSearchSubmit = (event) => {
+    event.preventDefault();
+
+    const trimmedQuery = searchInput.trim();
+    if (!trimmedQuery) {
+      setSuggestions([]);
+      setSuggestionsOpen(false);
+      return;
+    }
+
+    const highlightedSuggestion = suggestions[activeSuggestionIndex];
+    const firstSuggestion = suggestions[0];
+    submitSelection(
+      highlightedSuggestion ?? firstSuggestion ?? {
+        requestValue: normalizeRequestValue(trimmedQuery),
+        label: trimmedQuery,
+        fallbackName: formatItemName(trimmedQuery),
+      }
+    );
+  };
+
+  const handleInputKeyDown = (event) => {
+    if (!suggestionsOpen || suggestions.length === 0) {
+      if (event.key === 'Enter') handleSearchSubmit(event);
+      return;
+    }
+
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      setActiveSuggestionIndex((currentIndex) =>
+        currentIndex >= suggestions.length - 1 ? 0 : currentIndex + 1
+      );
+      return;
+    }
+
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      setActiveSuggestionIndex((currentIndex) =>
+        currentIndex <= 0 ? suggestions.length - 1 : currentIndex - 1
+      );
+      return;
+    }
+
+    if (event.key === 'Escape') {
+      setSuggestionsOpen(false);
+      setActiveSuggestionIndex(-1);
+    }
+  };
+
+  const showSuggestionPanel =
+    suggestionsOpen &&
+    (searchLoading || searchError || suggestions.length > 0 || searchInput.trim().length > 0);
+
   return (
     <div className="container">
       <h1>Groceries</h1>
       <p>Compare recent grocery prices across stores.</p>
 
-      <select
-        value={selectedItem}
-        onChange={(event) => setSelectedItem(event.target.value)}
-        style={{
-          width: '100%',
-          maxWidth: '520px',
-          padding: '0.65rem 0.75rem',
-          borderRadius: '8px',
-          border: '1px solid #ccc',
-          marginBottom: '1rem',
-          background: 'var(--vp-surface)',
-          color: 'var(--vp-text)',
-        }}
+      <div
+        ref={searchContainerRef}
+        style={{ position: 'relative', width: '100%', maxWidth: '520px', marginBottom: '1rem' }}
       >
-        {SUPPORTED_ITEMS.map((item) => (
-          <option key={item.id} value={item.id}>
-            {item.name}
-          </option>
-        ))}
-      </select>
+        <form onSubmit={handleSearchSubmit}>
+          <input
+            type="search"
+            value={searchInput}
+            onChange={(event) => {
+              setSearchInput(event.target.value);
+              setSuggestionsOpen(true);
+            }}
+            onFocus={() => {
+              if (searchInput.trim()) setSuggestionsOpen(true);
+            }}
+            onKeyDown={handleInputKeyDown}
+            placeholder="Search groceries"
+            autoComplete="off"
+            aria-label="Search grocery items"
+            aria-expanded={showSuggestionPanel}
+            aria-controls="grocery-search-suggestions"
+            style={{
+              width: '100%',
+              padding: '0.65rem 0.75rem',
+              borderRadius: '8px',
+              border: '1px solid #ccc',
+              background: 'var(--vp-surface)',
+              color: 'var(--vp-text)',
+              boxSizing: 'border-box',
+            }}
+          />
+        </form>
+
+        {showSuggestionPanel && (
+          <div
+            id="grocery-search-suggestions"
+            role="listbox"
+            aria-label="Grocery search suggestions"
+            style={{
+              position: 'absolute',
+              top: 'calc(100% + 0.4rem)',
+              left: 0,
+              right: 0,
+              zIndex: 10,
+              border: '1px solid #ddd',
+              borderRadius: '12px',
+              background: 'var(--vp-surface)',
+              boxShadow: '0 10px 25px rgba(0, 0, 0, 0.12)',
+              overflow: 'hidden',
+            }}
+          >
+            {searchLoading && (
+              <p style={{ margin: 0, padding: '0.85rem 1rem' }}>
+                Searching grocery items...
+              </p>
+            )}
+
+            {!searchLoading && searchError && (
+              <p style={{ margin: 0, padding: '0.85rem 1rem', color: '#b91c1c' }}>
+                {searchError}
+              </p>
+            )}
+
+            {!searchLoading && !searchError && suggestions.length === 0 && searchInput.trim() && (
+              <p style={{ margin: 0, padding: '0.85rem 1rem' }}>
+                No matching grocery items found.
+              </p>
+            )}
+
+            {!searchLoading && !searchError && suggestions.length > 0 && (
+              <div>
+                {suggestions.map((suggestion, index) => {
+                  const isActive = index === activeSuggestionIndex;
+                  return (
+                    <button
+                      key={suggestion.id}
+                      type="button"
+                      role="option"
+                      aria-selected={isActive}
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => submitSelection(suggestion)}
+                      onMouseEnter={() => setActiveSuggestionIndex(index)}
+                      style={{
+                        display: 'block',
+                        width: '100%',
+                        textAlign: 'left',
+                        borderRadius: 0,
+                        border: 'none',
+                        borderBottom: index === suggestions.length - 1 ? 'none' : '1px solid #e5e5e5',
+                        background: isActive ? 'rgba(212, 175, 55, 0.16)' : 'transparent',
+                        color: 'var(--vp-text)',
+                        padding: '0.8rem 1rem',
+                      }}
+                    >
+                      <span style={{ display: 'block', fontWeight: 600 }}>{suggestion.label}</span>
+                      {suggestion.secondaryLabel ? (
+                        <span style={{ display: 'block', fontSize: '0.9rem', opacity: 0.75 }}>
+                          {suggestion.secondaryLabel}
+                        </span>
+                      ) : null}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {loading && <p style={{ marginTop: '0.25rem' }}>Loading grocery data...</p>}
       {error && (
@@ -199,6 +549,12 @@ export default function Groceries() {
             <h2 style={{ marginBottom: '0.25rem' }}>
               {grocery.name} {showUnit ? <span style={{ opacity: 0.75 }}>({grocery.unit})</span> : null}
             </h2>
+            {historyRequest.displayValue && historyRequest.displayValue !== grocery.name ? (
+              <p style={{ marginTop: 0, marginBottom: '0.75rem', opacity: 0.75 }}>
+                Showing results for {historyRequest.displayValue}
+                {grocery.sourceName ? ` (${grocery.sourceName})` : ''}.
+              </p>
+            ) : null}
             <div style={{ marginBottom: '0.75rem', display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
               {grocery.currentPrices.length === 0 && <span>No current store price quotes are available from the backend.</span>}
               {grocery.currentPrices.map((price) => (
