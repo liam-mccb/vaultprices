@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
 import PriceChart from '@/components/charts/PriceChart';
 import { fetchUsdaReports } from '@/api/usdaReports';
 
@@ -501,9 +500,6 @@ export default function Groceries() {
     <div className="container">
       <h1>Groceries</h1>
       <p>Compare recent grocery prices across stores.</p>
-      <p style={{ marginTop: 0 }}>
-        Need report metadata? <Link to="/groceries/usda-reports">Browse USDA Reports</Link>.
-      </p>
 
       <div
         ref={searchContainerRef}
