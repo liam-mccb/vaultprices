@@ -1,9 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import PriceChart from '@/components/charts/PriceChart';
+import { fetchUsdaReports } from '@/api/usdaReports';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000';
 const SEARCH_DEBOUNCE_MS = 300;
 const DEFAULT_GROCERY_ITEM = 'eggs';
+const USDA_REPORT_LIMIT = 25;
+const RELATED_REPORTS_COUNT = 2;
 
 const SUPPORTED_ITEMS = [
   { id: 'eggs', name: 'Eggs', unit: '12 ct' },
@@ -57,6 +61,44 @@ const buildFallbackMeta = (item) => {
 };
 
 const DEFAULT_ITEM = buildFallbackMeta(DEFAULT_GROCERY_ITEM);
+
+const normalizeText = (value) =>
+  (typeof value === 'string' ? value.trim().toLowerCase() : '');
+
+const formatMissingField = (value) => {
+  if (value === null || value === undefined) return 'N/A';
+  if (typeof value === 'string' && !value.trim()) return 'N/A';
+  return value;
+};
+
+const scoreReportMatch = (report, terms) => {
+  const commodity = normalizeText(report?.commodity);
+  const title = normalizeText(report?.title);
+  const marketType = normalizeText(report?.marketType);
+
+  return terms.reduce((score, term) => {
+    let nextScore = score;
+    if (commodity.includes(term)) nextScore += 3;
+    if (title.includes(term)) nextScore += 2;
+    if (marketType.includes(term)) nextScore += 1;
+    return nextScore;
+  }, 0);
+};
+
+const getRelatedReports = (reports, queryTerms) => {
+  if (!Array.isArray(reports) || reports.length === 0) return [];
+  if (!Array.isArray(queryTerms) || queryTerms.length === 0) return [];
+
+  return reports
+    .map((report) => ({
+      report,
+      score: scoreReportMatch(report, queryTerms),
+    }))
+    .filter((entry) => entry.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, RELATED_REPORTS_COUNT)
+    .map((entry) => entry.report);
+};
 
 const normalizeGroceryResponse = (raw, fallback) => {
   const historySource = Array.isArray(raw?.history)
@@ -180,6 +222,9 @@ export default function Groceries() {
   const [searchError, setSearchError] = useState('');
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
+  const [usdaReports, setUsdaReports] = useState([]);
+  const [usdaReportsLoading, setUsdaReportsLoading] = useState(false);
+  const [usdaReportsError, setUsdaReportsError] = useState('');
 
   const searchContainerRef = useRef(null);
   const skipNextSearchRef = useRef(false);
@@ -188,6 +233,30 @@ export default function Groceries() {
     () => historyRequest.fallbackMeta ?? buildFallbackMeta(historyRequest.item),
     [historyRequest]
   );
+
+  const loadUsdaReports = useCallback(async (signal) => {
+    setUsdaReportsLoading(true);
+    setUsdaReportsError('');
+
+    try {
+      const reports = await fetchUsdaReports({ limit: USDA_REPORT_LIMIT, signal });
+      setUsdaReports(reports);
+    } catch (requestError) {
+      if (requestError.name === 'AbortError') return;
+      setUsdaReports([]);
+      setUsdaReportsError(
+        requestError?.message ?? 'Unable to load USDA reports right now.'
+      );
+    } finally {
+      setUsdaReportsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    loadUsdaReports(controller.signal);
+    return () => controller.abort();
+  }, [loadUsdaReports]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -321,6 +390,25 @@ export default function Groceries() {
     );
   }, [grocery, selectedRange]);
 
+  const reportSearchTerms = useMemo(() => {
+    const tokens = [
+      historyRequest.item,
+      historyRequest.displayValue,
+      grocery?.name,
+      selectedMeta?.name,
+    ]
+      .filter(Boolean)
+      .flatMap((value) => normalizeText(value).split(/[^a-z0-9]+/))
+      .filter((term) => term.length >= 3 || term === 'egg');
+
+    return Array.from(new Set(tokens));
+  }, [grocery?.name, historyRequest.displayValue, historyRequest.item, selectedMeta?.name]);
+
+  const relatedReports = useMemo(
+    () => getRelatedReports(usdaReports, reportSearchTerms),
+    [usdaReports, reportSearchTerms]
+  );
+
   const formatPrice = (value) =>
     new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -413,6 +501,9 @@ export default function Groceries() {
     <div className="container">
       <h1>Groceries</h1>
       <p>Compare recent grocery prices across stores.</p>
+      <p style={{ marginTop: 0 }}>
+        Need report metadata? <Link to="/groceries/usda-reports">Browse USDA Reports</Link>.
+      </p>
 
       <div
         ref={searchContainerRef}
@@ -599,6 +690,67 @@ export default function Groceries() {
                 standardizeYAxis
               />
             )}
+
+            <section style={{ marginTop: '1rem', borderTop: '1px solid #eee', paddingTop: '1rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem', alignItems: 'center' }}>
+                <h3 style={{ margin: 0 }}>Related USDA Reports</h3>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const controller = new AbortController();
+                    loadUsdaReports(controller.signal);
+                  }}
+                  disabled={usdaReportsLoading}
+                >
+                  {usdaReportsLoading ? 'Refreshing...' : 'Refresh'}
+                </button>
+              </div>
+
+              {usdaReportsLoading && (
+                <p style={{ marginBottom: 0 }}>Loading related USDA reports...</p>
+              )}
+
+              {!usdaReportsLoading && usdaReportsError && (
+                <p style={{ marginBottom: 0, color: '#b91c1c' }}>
+                  {usdaReportsError}
+                </p>
+              )}
+
+              {!usdaReportsLoading && !usdaReportsError && relatedReports.length === 0 && (
+                <p style={{ marginBottom: 0 }}>
+                  No related USDA reports found for this grocery item.
+                </p>
+              )}
+
+              {!usdaReportsLoading && !usdaReportsError && relatedReports.length > 0 && (
+                <div style={{ display: 'grid', gap: '0.75rem', marginTop: '0.75rem' }}>
+                  {relatedReports.map((report, index) => (
+                    <article
+                      key={`${report.id ?? 'usda'}-${index}`}
+                      style={{
+                        border: '1px solid #ddd',
+                        borderRadius: '10px',
+                        padding: '0.75rem',
+                        background: 'var(--vp-surface)',
+                      }}
+                    >
+                      <p style={{ margin: 0, fontWeight: 600 }}>
+                        {formatMissingField(report.title)}
+                      </p>
+                      <p style={{ margin: '0.35rem 0 0' }}>
+                        Commodity: {formatMissingField(report.commodity)}
+                      </p>
+                      <p style={{ margin: '0.15rem 0 0' }}>
+                        Market Type: {formatMissingField(report.marketType)}
+                      </p>
+                      <p style={{ margin: '0.15rem 0 0' }}>
+                        ID: {formatMissingField(report.id)}
+                      </p>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </section>
           </article>
         )}
       </div>

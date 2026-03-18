@@ -74,6 +74,7 @@ export default function Navbar() {
           <NavLink to="/about"   label="About"   />
           <NavLink to="/contact" label="Contact" />
           <NavLink to="/groceries" label="Groceries" />
+          <NavLink to="/groceries/usda-reports" label="USDA Reports" />
           <NavLink to="/vault"   label="My Vault" />
 
           {/* account hamburger + dropdown (anchored) */}
@@ -134,6 +135,7 @@ export default function Navbar() {
           <NavLink to="/about"   label="About"   onClick={closeMobile} />
           <NavLink to="/contact" label="Contact" onClick={closeMobile} />
           <NavLink to="/groceries" label="Groceries" onClick={closeMobile} />
+          <NavLink to="/groceries/usda-reports" label="USDA Reports" onClick={closeMobile} />
           <NavLink to="/vault"   label="My Vault" onClick={closeMobile} />
 
           {/* Profile / Settings (signed-in only) */}
