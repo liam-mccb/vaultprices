@@ -6,7 +6,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000
 const SEARCH_DEBOUNCE_MS = 300;
 const DEFAULT_GROCERY_ITEM = 'eggs';
 const USDA_REPORT_LIMIT = 25;
-const RELATED_REPORTS_COUNT = 2;
+const RELATED_REPORTS_COUNT = 5;
 
 const SUPPORTED_ITEMS = [
   { id: 'eggs', name: 'Eggs', unit: '12 ct' },
@@ -61,43 +61,8 @@ const buildFallbackMeta = (item) => {
 
 const DEFAULT_ITEM = buildFallbackMeta(DEFAULT_GROCERY_ITEM);
 
-const normalizeText = (value) =>
-  (typeof value === 'string' ? value.trim().toLowerCase() : '');
-
-const formatMissingField = (value) => {
-  if (value === null || value === undefined) return 'N/A';
-  if (typeof value === 'string' && !value.trim()) return 'N/A';
-  return value;
-};
-
-const scoreReportMatch = (report, terms) => {
-  const commodity = normalizeText(report?.commodity);
-  const title = normalizeText(report?.title);
-  const marketType = normalizeText(report?.marketType);
-
-  return terms.reduce((score, term) => {
-    let nextScore = score;
-    if (commodity.includes(term)) nextScore += 3;
-    if (title.includes(term)) nextScore += 2;
-    if (marketType.includes(term)) nextScore += 1;
-    return nextScore;
-  }, 0);
-};
-
-const getRelatedReports = (reports, queryTerms) => {
-  if (!Array.isArray(reports) || reports.length === 0) return [];
-  if (!Array.isArray(queryTerms) || queryTerms.length === 0) return [];
-
-  return reports
-    .map((report) => ({
-      report,
-      score: scoreReportMatch(report, queryTerms),
-    }))
-    .filter((entry) => entry.score > 0)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, RELATED_REPORTS_COUNT)
-    .map((entry) => entry.report);
-};
+const getDisplayText = (value) =>
+  (typeof value === 'string' && value.trim() ? value.trim() : '');
 
 const normalizeGroceryResponse = (raw, fallback) => {
   const historySource = Array.isArray(raw?.history)
@@ -233,12 +198,34 @@ export default function Groceries() {
     [historyRequest]
   );
 
+  const usdaQuery = useMemo(() => {
+    const canonicalItem = normalizeRequestValue(grocery?.id) || normalizeRequestValue(historyRequest.item);
+    if (canonicalItem) return canonicalItem;
+
+    return (
+      getDisplayText(grocery?.name) ||
+      getDisplayText(historyRequest.displayValue) ||
+      getDisplayText(searchInput)
+    );
+  }, [grocery?.id, grocery?.name, historyRequest.displayValue, historyRequest.item, searchInput]);
+
   const loadUsdaReports = useCallback(async (signal) => {
+    if (!usdaQuery) {
+      setUsdaReports([]);
+      setUsdaReportsError('');
+      setUsdaReportsLoading(false);
+      return;
+    }
+
     setUsdaReportsLoading(true);
     setUsdaReportsError('');
 
     try {
-      const reports = await fetchUsdaReports({ limit: USDA_REPORT_LIMIT, signal });
+      const reports = await fetchUsdaReports({
+        query: usdaQuery,
+        limit: USDA_REPORT_LIMIT,
+        signal,
+      });
       setUsdaReports(reports);
     } catch (requestError) {
       if (requestError.name === 'AbortError') return;
@@ -249,7 +236,7 @@ export default function Groceries() {
     } finally {
       setUsdaReportsLoading(false);
     }
-  }, []);
+  }, [usdaQuery]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -389,23 +376,9 @@ export default function Groceries() {
     );
   }, [grocery, selectedRange]);
 
-  const reportSearchTerms = useMemo(() => {
-    const tokens = [
-      historyRequest.item,
-      historyRequest.displayValue,
-      grocery?.name,
-      selectedMeta?.name,
-    ]
-      .filter(Boolean)
-      .flatMap((value) => normalizeText(value).split(/[^a-z0-9]+/))
-      .filter((term) => term.length >= 3 || term === 'egg');
-
-    return Array.from(new Set(tokens));
-  }, [grocery?.name, historyRequest.displayValue, historyRequest.item, selectedMeta?.name]);
-
   const relatedReports = useMemo(
-    () => getRelatedReports(usdaReports, reportSearchTerms),
-    [usdaReports, reportSearchTerms]
+    () => (Array.isArray(usdaReports) ? usdaReports.slice(0, RELATED_REPORTS_COUNT) : []),
+    [usdaReports]
   );
 
   const formatPrice = (value) =>
@@ -731,17 +704,25 @@ export default function Groceries() {
                       }}
                     >
                       <p style={{ margin: 0, fontWeight: 600 }}>
-                        {formatMissingField(report.title)}
+                        {getDisplayText(report.title) || 'Untitled USDA report'}
                       </p>
-                      <p style={{ margin: '0.35rem 0 0' }}>
-                        Commodity: {formatMissingField(report.commodity)}
-                      </p>
-                      <p style={{ margin: '0.15rem 0 0' }}>
-                        Market Type: {formatMissingField(report.marketType)}
-                      </p>
-                      <p style={{ margin: '0.15rem 0 0' }}>
-                        ID: {formatMissingField(report.id)}
-                      </p>
+                      {getDisplayText(report.commodity) ? (
+                        <p style={{ margin: '0.35rem 0 0' }}>
+                          Commodity: {report.commodity}
+                        </p>
+                      ) : null}
+                      {getDisplayText(report.marketType) ? (
+                        <p style={{ margin: '0.15rem 0 0' }}>
+                          Market Type: {report.marketType}
+                        </p>
+                      ) : null}
+                      {getDisplayText(report.url) ? (
+                        <p style={{ margin: '0.35rem 0 0' }}>
+                          <a href={report.url} target="_blank" rel="noreferrer">
+                            Open report
+                          </a>
+                        </p>
+                      ) : null}
                     </article>
                   ))}
                 </div>
